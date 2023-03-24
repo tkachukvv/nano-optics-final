@@ -1,0 +1,169 @@
+#Script to set up mesh override sweep 
+#Set global variables
+
+numberofpoints=30; #number of sweep points
+dmstart=150e-9; #smallest dx/y/z
+dmstop=45e-9; #largest dx/y/z
+
+#use to delete pre-existing script
+deletesweep("Override");
+# add a new sweep and set basic properties
+addsweep;
+setsweep("sweep", "name", "Override");
+setsweep("Override", "type", "Ranges");
+setsweep("Override","Number of points",numberofpoints);
+
+#mesh 1
+
+##define dx
+# define the parameter thickness
+para = struct;
+para.Name = "dx";
+para.Parameter = "::model::mesh1::dx";
+para.Type = "Length";
+
+para.Start =dmstart;
+para.Stop = dmstop;
+
+# add the parameter thickness to the sweep
+addsweepparameter("Override", para);
+
+##define dy
+# define the parameter thickness
+para = struct;
+para.Name = "dy";
+para.Parameter = "::model::mesh1::dy";
+para.Type = "Length";
+
+para.Start =dmstart;
+para.Stop = dmstop;
+
+# add the parameter thickness to the sweep
+addsweepparameter("Override", para);
+
+
+##define dz
+# define the parameter thickness
+para = struct;
+para.Name = "dz";
+para.Parameter = "::model::mesh1::dz";
+para.Type = "Length";
+
+para.Start =dmstart;
+para.Stop =dmstop;
+
+# add the parameter thickness to the sweep
+addsweepparameter("Override", para);
+
+##mesh 2
+
+##define dx
+# define the parameter thickness
+para = struct;
+para.Name = "dx";
+para.Parameter = "::model::mesh2::dx";
+para.Type = "Length";
+
+para.Start =dmstart;
+para.Stop = dmstop;
+
+# add the parameter thickness to the sweep
+addsweepparameter("Override", para);
+
+##define dy
+# define the parameter thickness
+para = struct;
+para.Name = "dy";
+para.Parameter = "::model::mesh2::dy";
+para.Type = "Length";
+
+para.Start =dmstart;
+para.Stop = dmstop;
+
+# add the parameter thickness to the sweep
+addsweepparameter("Override", para);
+
+
+##define dz
+# define the parameter thickness
+para = struct;
+para.Name = "dz";
+para.Parameter = "::model::mesh2::dz";
+para.Type = "Length";
+
+para.Start =dmstart;
+para.Stop =dmstop;
+
+# add the parameter thickness to the sweep
+addsweepparameter("Override", para);
+
+###mesh 3
+
+##define dx
+# define the parameter thickness
+para = struct;
+para.Name = "dx";
+para.Parameter = "::model::mesh3::dx";
+para.Type = "Length";
+
+para.Start =dmstart;
+para.Stop = dmstop;
+
+# add the parameter thickness to the sweep
+addsweepparameter("Override", para);
+
+##define dy
+# define the parameter thickness
+para = struct;
+para.Name = "dy";
+para.Parameter = "::model::mesh3::dy";
+para.Type = "Length";
+
+para.Start =dmstart;
+para.Stop = dmstop;
+
+# add the parameter thickness to the sweep
+addsweepparameter("Override", para);
+
+
+##define dz
+# define the parameter thickness
+para = struct;
+para.Name = "dz";
+para.Parameter = "::model::mesh3::dz";
+para.Type = "Length";
+
+para.Start =dmstart;
+para.Stop =dmstop;
+
+# add the parameter thickness to the sweep
+addsweepparameter("Override", para);
+
+
+###
+
+#Define result: L-out T
+result_LT = struct;
+result_LT.Name = "RLT";
+result_LT.Result = "::model::L-out::T";
+
+# add the results T to the sweep
+addsweepresult("Override", result_LT);
+
+#Define result: R-out T
+result_RT = struct;
+result_RT.Name = "RRT";
+result_RT.Result = "::model::R-out::T";
+
+# add the results T to the sweep
+addsweepresult("Override", result_RT);
+
+# run the sweep
+runsweep("Override");
+
+# save and view the results
+LT = getsweepresult("Override", "RLT");
+visualize(LT);
+
+RT = getsweepresult("Override", "RRT");
+visualize(RT);

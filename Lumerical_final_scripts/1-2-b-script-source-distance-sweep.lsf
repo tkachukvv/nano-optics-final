@@ -1,0 +1,41 @@
+#Script to sweep distance between source and top surface of simulated geometry
+
+#Set global variables
+numberofpoints=2; #number of sweep points
+zmaxstart=1e-6; #smallest Z max
+zmaxstop=5e-6; #largest Z max
+
+# use to delete pre-existing script
+deletesweep("ZMaxSource");
+# add a new sweep and set basic properties
+addsweep;
+setsweep("sweep", "name", "ZMaxSource");
+setsweep("ZMaxSource", "type", "Ranges");
+setsweep("ZMaxSource","Number of points",numberofpoints);
+
+# define source distance 
+# define the parameter z max
+para = struct;
+para.Name = "Zmax";
+para.Parameter = "::model::FDTD::z max";
+para.Type = "Length";
+para.Start =zmaxstart;
+para.Stop = zmaxstop;
+
+# add the parameter thickness to the sweep
+addsweepparameter("ZMaxSource", para);
+
+#Define result: L-out T
+result_LT = struct;
+result_LT.Name = "LT";
+result_LT.Result = "::model::L-out::T";
+
+# add the results T to the sweep
+addsweepresult("ZMaxSource", result_LT);
+
+# run the sweep
+runsweep("ZMaxSource");
+
+# save and view the results
+LT = getsweepresult("ZMaxSource", "LT");
+visualize(LT);

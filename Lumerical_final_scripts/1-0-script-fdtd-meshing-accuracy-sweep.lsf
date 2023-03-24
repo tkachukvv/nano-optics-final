@@ -1,0 +1,35 @@
+#Sweep for FDTD meshing accuracy
+
+deletesweep("Meshing");
+# add a new sweep and set basic properties
+addsweep;
+setsweep("sweep", "name", "Meshing");
+setsweep("Meshing", "type", "Ranges");
+setsweep("Meshing","Number of points",8);
+
+# define the parameter thickness
+para = struct;
+para.Name = "Mesh accuracy";
+para.Parameter = "::model::FDTD::mesh accuracy";
+para.Type = "Number";
+
+para.Start =1;
+para.Stop = 8;
+
+# add the parameter thickness to the sweep
+addsweepparameter("Meshing", para);
+
+#Define result: T
+result_T = struct;
+result_T.Name = "T";
+result_T.Result = "::model::L-out::T";
+
+# add the results T to the sweep
+addsweepresult("Meshing", result_T);
+
+# run the sweep
+runsweep("Meshing");
+
+# save and view the results
+T = getsweepresult("Meshing", "T");
+visualize(T);

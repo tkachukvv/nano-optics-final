@@ -1,0 +1,240 @@
+#Set up geometry for mesh override sweeep
+
+##########################
+##   Global variables   ##
+##########################
+
+#Number of frequency points for monitors
+numpoints=200;
+
+#Gap between waveguides
+g=400e-9;
+
+#Mesh override dx/y/x - dummy value
+dm=5e-9;
+
+#Mesh override buffer - potential subject to sweep
+mbuffer=50e-9;
+
+#Wavelength(s)
+wavelengthstart=1.3e-6;
+wavelengthstop=1.8e-6;
+
+##reset everything
+switchtolayout;
+
+clc;
+deleteall;
+
+#to avoid misalignment
+set("use relative coordinates",0);
+
+##################
+##   Geometry   ##
+##################
+
+##   Add substrate
+addrect;
+set("name","Substrate");
+set("x",0);
+set("x span",7e-6);
+set("y",0.64e-6);
+set("y span",4e-6);
+set("z",-2.5e-6);
+set("z span",5e-6);
+set("material","<Object defined dielectric>");
+set("index","1.45");
+set("use relative coordinates",0);
+
+##Add left waveguide "L"
+addrect;
+set("name","L");
+set("x min",-3.5e-6);
+set("x max",-g/2);
+set("y",0);
+set("y span",0.4e-6);
+set("z",0.125e-6);
+set("z span",0.25e-6);
+set("material","<Object defined dielectric>");
+set("index","3.45");
+set("use relative coordinates",0);
+
+##Add left waveguide "R"
+addrect;
+set("name","R");
+set("x min",g/2);
+set("x max",3.5e-6);
+set("y",0);
+set("y span",0.4e-6);
+set("z",0.125e-6);
+set("z span",0.25e-6);
+set("material","<Object defined dielectric>");
+set("index","3.45");
+set("use relative coordinates",0);
+
+##Add disc
+addcircle;
+set("name","Disc");
+set("x",0);
+set("y",0.64e-6);
+set("radius",0.34e-6);
+set("z",0.125e-6);
+set("z span",0.25e-6);
+set("material","<Object defined dielectric>");
+set("index","3.45");
+set("use relative coordinates",0);
+
+####################
+##   Simulation   ##
+####################
+
+##Add FDTD box with PML BCs
+addfdtd;
+set('x',0);
+set('x span',6e-6);
+set('y',0.4e-6);
+set('y span',2.9e-6);
+set('z',0.2e-6);
+set('z span',2e-6);
+set('mesh accuracy',3);
+set('x min bc',"PML");
+set('x max bc',"PML");
+set('y min bc',"PML");
+set('y max bc',"PML");
+set('z min bc',"PML");
+set('z max bc',"PML");
+
+##Add mesh overrides to be 'dm' with 'mbuffer'
+#add mesh override for Disc
+addmesh;
+set('name',"mesh1");
+set('set maximum mesh step',1);
+set('override x mesh',1);
+set('dx',dm);
+set('override y mesh',1);
+set('dy',dm);
+set('override z mesh',1);
+set('dz',dm);
+
+set('based on a structure',1);
+set('structure',"Disc");
+set('buffer',mbuffer);
+
+#add mesh override for L
+addmesh;
+set('name',"mesh2");
+set('set maximum mesh step',1);
+set('override x mesh',1);
+set('dx',dm);
+set('override y mesh',1);
+set('dy',dm);
+set('override z mesh',1);
+set('dz',dm);
+
+set('based on a structure',1);
+set('structure',"L");
+set('buffer',mbuffer);
+
+#add mesh override for R
+addmesh;
+set('name',"mesh3");
+set('set maximum mesh step',1);
+set('override x mesh',1);
+set('dx',dm);
+set('override y mesh',1);
+set('dy',dm);
+set('override z mesh',1);
+set('dz',dm);
+
+set('based on a structure',1);
+set('structure',"R");
+set('buffer',mbuffer);
+
+##Add source(s)
+############
+##   Ex   ##
+############
+addplane; 
+set("name","Ex");
+set("phase",0);
+#Disposition
+set('x',-0.05e-6);
+set('x span',8.6e-6);
+set('y',0.45e-6);
+set('y span',5.8e-6);
+set('z',1e-6);
+set("optimize for short pulse",0);
+
+# set the propagation
+set("injection axis","z-axis");
+set("direction","backward");
+
+# set the polarization 
+set("polarization angle",0);
+set("wavelength start",wavelengthstart);
+set("wavelength stop",wavelengthstop);
+set("use relative coordinates",0);
+
+############
+##   Ey   ##
+############
+addplane; 
+set("name","Ey");
+set("phase",90);
+#Disposition
+set('x',-0.05e-6);
+set('x span',8.6e-6);
+set('y',0.45e-6);
+set('y span',5.8e-6);
+set('z',1e-6);
+set("optimize for short pulse",0);
+
+# set the propagation
+set("injection axis","z-axis");
+set("direction","backward");
+
+# set the polarization 
+set("polarization angle",90);
+set("wavelength start",wavelengthstart);
+set("wavelength stop",wavelengthstop);
+set("use relative coordinates",0);
+
+##################
+##   Monitors   ##
+##################
+
+
+#Add L-waveguide power monitor
+addpower;
+set("name","L-out");
+set("monitor type","2D X-normal");
+set("x",-1.6e-6);
+set("y",0);
+set("y span",0.6e-6);
+set("z",0.125e-6);
+set("z span",0.4e-6);
+set("override global monitor settings",1);
+set("frequency points",numpoints);
+
+set("partial spectral average",0);
+set("total spectral average",0);
+
+
+##Power in right waveguide 
+#Add R-waveguide power monitor
+addpower;
+set("name","R-out");
+set("monitor type","2D X-normal");
+set("x",0.5e-6);
+set("y",0);
+set("y span",0.6e-6);
+set("z",0.125e-6);
+set("z span",0.4e-6);
+set("override global monitor settings",1);
+set("frequency points",numpoints);
+
+set("partial spectral average",0);
+set("total spectral average",0);
+
+
+

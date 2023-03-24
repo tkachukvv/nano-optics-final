@@ -1,0 +1,328 @@
+#Script for reproducing fig. S3. - sweep of gap
+
+clc;
+clear;
+
+##########################
+##   Global variables   ##
+##########################
+
+#Separation between the substrate and wave source
+top_sep=3e-6;
+
+#Thickness of substrate and FDTD bottom part ("-" sign in code below)
+bot_z=3e-6;
+
+#Multiplyer: effective area 
+S=0.1; #um
+
+#Number of frequency points for monitors
+numpoints=100;
+
+#Gap between waveguides
+#g=400e-9;
+
+#Mesh override dx/y/x
+dm=10e-9;
+
+#Mesh override buffer
+mbuffer=50e-9;
+
+#Wavelength(s)
+wavelengthstart=1.3e-6;
+wavelengthstop=1.8e-6;
+
+######################
+##  Initialize FOR  ##
+######################
+
+i=1;
+gaps=(0:0.020:0.500)*1e-6; #um 
+size_gaps=size(gaps);
+length_results=size_gaps(1);
+
+#Prepare result arrays
+alpha=zeros(numpoints,length_results);
+beta=zeros(numpoints,length_results);
+fom=zeros(numpoints,length_results);
+
+# Body of loop --|>
+for(g=gaps) { 
+    #cosmetic console message
+   ?"Iteration "+num2str(i) +". Gap="+num2str(g);
+
+##########################
+##   reset everything   ##
+##########################
+
+switchtolayout;
+deleteall;
+
+#to avoid misalignment
+set("use relative coordinates",0);
+
+##################
+##   Geometry   ##
+##################
+
+##   Add substrate
+addrect;
+set("name","Substrate");
+set("x",0);
+set("x span",7e-6);
+set("y",0.4e-6);
+set("y span",3e-6);
+set("z min",-bot_z-0.5e-6);
+set("z max",0);
+set("material","<Object defined dielectric>");
+set("index","1.45");
+set("use relative coordinates",0);
+
+##Add left waveguide "L"
+addrect;
+set("name","L");
+set("x min",-(getnamed("Substrate","x span"))/2);
+set("x max",-g/2);
+set("y",0);
+set("y span",0.4e-6);
+set("z",0.125e-6);
+set("z span",0.25e-6);
+set("material","<Object defined dielectric>");
+set("index","3.45");
+set("use relative coordinates",0);
+
+##Add left waveguide "R"
+addrect;
+set("name","R");
+set("x min",g/2);
+set("x max",(getnamed("Substrate","x span"))/2);
+set("y",0);
+set("y span",0.4e-6);
+set("z",0.125e-6);
+set("z span",0.25e-6);
+set("material","<Object defined dielectric>");
+set("index","3.45");
+
+#to avoid misalignment
+set("use relative coordinates",0);
+
+##Add disc
+addcircle;
+set("name","Disc");
+set("x",0);
+set("y",0.64e-6);
+set("radius",0.34e-6);
+set("z",0.125e-6);
+set("z span",0.25e-6);
+set("material","<Object defined dielectric>");
+set("index","3.45");
+set("use relative coordinates",0);
+
+####################
+##   FDTD box     ##
+####################
+
+##Add FDTD box with PML BCs
+addfdtd;
+set('x',0);
+set('x span',(getnamed("Substrate","x span"))-200e-9);
+set('y',0.4e-6);
+set('y span',2.9e-6);
+set('z max',top_sep+0.2e-6);
+set('z min',-bot_z);
+set('mesh accuracy',3);
+set('x min bc',"PML");
+set('x max bc',"PML");
+set('y min bc',"PML");
+set('y max bc',"PML");
+set('z min bc',"PML");
+set('z max bc',"PML");
+
+##Add mesh overrides to be 'dm' with 'mbuffer'
+#add mesh override for Disc
+addmesh;
+set('set maximum mesh step',1);
+set('override x mesh',1);
+set('dx',dm);
+set('override y mesh',1);
+set('dy',dm);
+set('override z mesh',1);
+set('dz',dm);
+set('based on a structure',1);
+set('structure',"Disc");
+set('buffer',mbuffer);
+
+#add mesh override for L
+addmesh;
+set('set maximum mesh step',1);
+set('override x mesh',1);
+set('dx',dm);
+set('override y mesh',1);
+set('dy',dm);
+set('override z mesh',1);
+set('dz',dm);
+set('based on a structure',1);
+set('structure',"L");
+set('buffer',mbuffer);
+
+#add mesh override for R
+addmesh;
+set('set maximum mesh step',1);
+set('override x mesh',1);
+set('dx',dm);
+set('override y mesh',1);
+set('dy',dm);
+set('override z mesh',1);
+set('dz',dm);
+set('based on a structure',1);
+set('structure',"R");
+set('buffer',mbuffer);
+
+##Add source(s)
+############
+##   Ex   ##
+############
+addplane; 
+set("name","Ex");
+set("phase",0);
+set("polarization angle",0);
+set('x',0e-6);
+set('x span',(getnamed("Substrate","x span"))-200e-9);
+set('y',0.64e-6);
+set('y span',5.8e-6);
+set('z',top_sep);
+set("optimize for short pulse",0);
+set("injection axis","z-axis");
+set("direction","backward");
+set("wavelength start",wavelengthstart);
+set("wavelength stop",wavelengthstop);
+set("use relative coordinates",0);
+
+############
+##   Ey   ##
+############
+addplane; 
+set("name","Ey");
+set("phase",90);
+set("polarization angle",90);
+set('x',0e-6);
+set('x span',(getnamed("Substrate","x span"))-200e-9);
+set('y',0.64e-6);
+set('y span',5.8e-6);
+set('z',top_sep);
+set("optimize for short pulse",0);
+set("injection axis","z-axis");
+set("direction","backward");
+set("wavelength start",wavelengthstart);
+set("wavelength stop",wavelengthstop);
+set("use relative coordinates",0);
+
+##################
+##   Monitors   ##
+##################
+
+
+#Add L-waveguide power monitor
+addpower;
+set("name","L-out");
+set("monitor type","2D X-normal");
+set("x",-1.5e-6); #optimized
+set("y",0);
+set("y span",0.6e-6);
+set("z",0.125e-6);
+set("z span",0.4e-6);
+set("override global monitor settings",1);
+set("frequency points",numpoints);
+set("partial spectral average",1);
+set("total spectral average",1);
+
+#Add R-waveguide power monitor
+addpower;
+set("name","R-out");
+set("monitor type","2D X-normal");
+set("x",0.5e-6); #optimized
+set("y",0);
+set("y span",0.6e-6);
+set("z",0.125e-6);
+set("z span",0.4e-6);
+set("override global monitor settings",1);
+set("frequency points",numpoints);
+set("partial spectral average",1);
+set("total spectral average",1);
+
+##Run
+run;
+
+#Get alpha 
+#f=getdata("L-out","f");
+alphai=(transmission("L-out"))^2;
+alpha(1:numpoints,i)=alphai;
+
+#Get beta
+betai=(transmission("R-out"))^2;
+beta(1:numpoints,i)=betai;
+
+
+#Get FOM
+
+fomi=alphai/betai;
+fom(1:numpoints,i)=fomi;
+
+
+#next iteration
+i=i+1;
+#Console
+?"Done.";
+}
+#<|-- End body of loop
+
+#Calculate array of lambdas
+#Because it is the same for both monitors 
+f=getdata("L-out","f");
+lambda=c/f;
+
+
+# After the matrixes of results are collected
+# matrix datasets are assembled 
+
+# lambda go in Y axis as 1d-matrix of parameters
+# gaps go in X axis as 1d-matrix of parameters
+# information (intensity) data 2d matrix
+
+## create Alpha dataset
+Alpha = matrixdataset("Alpha"); # initialize dataset of Alpha
+Alpha.addparameter("Wavelength",lambda); # add Y parameter
+Alpha.addparameter("Gap",gaps); # add X parameter
+Alpha.addattribute("Alpha",alpha); # add intensity attribute
+
+## plot data
+#image(gaps,lambda,alpha); # use original matrices
+#image(Alpha.gaps,R.lambda,Alpha.alpha);  # use dataset
+
+## send dataset to visualizer
+visualize(Alpha); 
+
+## create Beta dataset
+Beta = matrixdataset("Beta"); # initialize dataset of Beta
+Beta.addparameter("Wavelength",lambda); # add Y parameter
+Beta.addparameter("Gap",gaps); # add X parameter
+Beta.addattribute("Beta",beta); # add intensity attribute
+
+## send dataset to visualizer
+visualize(Beta); 
+
+## create FOM dataset
+FOM = matrixdataset("FOM"); # initialize dataset of FOM
+FOM.addparameter("Wavelength",lambda); # add Y parameter
+FOM.addparameter("Gap",gaps); # add X parameter
+FOM.addattribute("FOM",fom); # add intensity attribute
+
+## send dataset to visualizer
+visualize(FOM); 
+
+
+    
+    
+
+
+    

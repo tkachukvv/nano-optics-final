@@ -1,0 +1,59 @@
+# Script to produce a sweep that
+# generates the polar plot for two discs 
+
+#Set global variables
+numberofpoints=120; #number of sweep points
+polstart=90; #smallest polarization angle
+polstop=450; #largest polarization angle
+
+#use to delete pre-existing script
+deletesweep("Polar2");
+# add a new sweep and set basic properties
+addsweep;
+setsweep("sweep", "name", "Polar2");
+setsweep("Polar2", "type", "Ranges");
+setsweep("Polar2","Number of points",numberofpoints);
+
+#Polarization sweep for 2 discs
+
+##define polarization angle
+# define the parameter thickness
+para = struct;
+para.Name = "Pol";
+para.Parameter = "::model::Ex::polarization angle";
+para.Type = "Number";
+
+para.Start =polstart;
+para.Stop = polstop;
+
+# add the parameter thickness to the sweep
+addsweepparameter("Polar2", para);
+
+#Define result: L-out T
+result_LT = struct;
+result_LT.Name = "RLT";
+result_LT.Result = "::model::L-out::T";
+
+# add the results T to the sweep
+addsweepresult("Polar2", result_LT);
+
+#Define result: R-out T
+result_RT = struct;
+result_RT.Name = "RRT";
+result_RT.Result = "::model::R-out::T";
+
+# add the results T to the sweep
+addsweepresult("Polar2", result_RT);
+
+# run the sweep
+runsweep("Polar2");
+
+# save and view the results
+LT = getsweepresult("Polar2", "RLT");
+polarL=LT.T;
+RT = getsweepresult("Polar2", "RRT");
+polarR=RT.T;
+
+#Plot values polar 
+theta=linspace(0,2*pi,numberofpoints);
+polar(theta,polarR);

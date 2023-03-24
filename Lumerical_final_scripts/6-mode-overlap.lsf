@@ -1,0 +1,310 @@
+#Script for calculating and plotting mode overlap
+
+clc;
+clear;
+cleardcard;
+
+##########################
+##   Global variables   ##
+##########################
+
+#Select which mode to chose 
+nomode=1;
+
+#Iteration
+i=1;
+
+#No. of monitors
+no=10;
+
+#Result matrix
+result=zeros(3,no);
+
+#Separation between the substrate and wave source
+top_sep=2.2e-6;
+
+#Thickness of substrate and FDTD bottom part ("-" sign in code below)
+bot_z=3e-6;
+
+#Number of frequency points for monitors
+numpoints=100;
+
+#Gap between waveguides
+g=400e-9;
+
+#Mesh override dx/y/x
+dm=20e-9;
+
+#Mesh override buffer
+mbuffer=20e-9;
+
+#Wavelength(s)
+wavelengthstart=1.55e-6;
+wavelengthstop=1.55e-6;
+
+##########################
+##   reset everything   ##
+##########################
+
+switchtolayout;
+
+deleteall;
+
+#to avoid misalignment
+set("use relative coordinates",0);
+
+##################
+##   Geometry   ##
+##################
+
+##   Add substrate
+addrect;
+set("name","Substrate");
+set("x",0);
+set("x span",7e-6);
+set("y",0.4e-6);
+set("y span",3e-6);
+set("z min",-bot_z-0.5e-6);
+set("z max",0);
+set("material","<Object defined dielectric>");
+set("index","1.45");
+
+#to avoid misalignment
+set("use relative coordinates",0);
+
+##Add left waveguide "L"
+addrect;
+set("name","L");
+set("x min",-(getnamed("Substrate","x span"))/2);
+set("x max",-g/2);
+set("y",0);
+set("y span",0.4e-6);
+set("z",0.125e-6);
+set("z span",0.25e-6);
+set("material","<Object defined dielectric>");
+set("index","3.45");
+
+#to avoid misalignment
+set("use relative coordinates",0);
+
+##Add left waveguide "R"
+addrect;
+set("name","R");
+set("x min",g/2);
+set("x max",(getnamed("Substrate","x span"))/2);
+set("y",0);
+set("y span",0.4e-6);
+set("z",0.125e-6);
+set("z span",0.25e-6);
+set("material","<Object defined dielectric>");
+set("index","3.45");
+
+#to avoid misalignment
+set("use relative coordinates",0);
+
+##Add disc
+addcircle;
+set("name","Disc");
+set("x",0);
+set("y",0.64e-6);
+set("radius",0.34e-6);
+set("z",0.125e-6);
+set("z span",0.25e-6);
+set("material","<Object defined dielectric>");
+set("index","3.45");
+
+#to avoid misalignment
+set("use relative coordinates",0);
+
+####################
+##   FDTD box     ##
+####################
+
+##Add FDTD box with PML BCs
+addfdtd;
+set('x',0);
+set('x span',(getnamed("Substrate","x span"))-200e-9);
+set('y',0.4e-6);
+set('y span',2.9e-6);
+set('z max',top_sep+0.2e-6);
+set('z min',-bot_z);
+set('mesh accuracy',3);
+set('x min bc',"PML");
+set('x max bc',"PML");
+set('y min bc',"PML");
+set('y max bc',"PML");
+set('z min bc',"PML");
+set('z max bc',"PML");
+
+##Add mesh overrides to be 'dm' with 'mbuffer'
+#add mesh override for Disc
+addmesh;
+set('set maximum mesh step',1);
+set('override x mesh',1);
+set('dx',dm);
+set('override y mesh',1);
+set('dy',dm);
+set('override z mesh',1);
+set('dz',dm);
+
+set('based on a structure',1);
+set('structure',"Disc");
+set('buffer',mbuffer);
+
+#add mesh override for L
+addmesh;
+set('set maximum mesh step',1);
+set('override x mesh',1);
+set('dx',dm);
+set('override y mesh',1);
+set('dy',dm);
+set('override z mesh',1);
+set('dz',dm);
+
+set('based on a structure',1);
+set('structure',"L");
+set('buffer',mbuffer);
+
+#add mesh override for R
+addmesh;
+set('set maximum mesh step',1);
+set('override x mesh',1);
+set('dx',dm);
+set('override y mesh',1);
+set('dy',dm);
+set('override z mesh',1);
+set('dz',dm);
+
+set('based on a structure',1);
+set('structure',"R");
+set('buffer',mbuffer);
+
+##Add source(s)
+############
+##   Ex   ##
+############
+addplane; 
+set("name","Ex");
+set("phase",0);
+set("polarization angle",0);
+#Disposition
+set('x',0e-6);
+set('x span',(getnamed("Substrate","x span"))-200e-9);
+set('y',0.64e-6);
+set('y span',5.8e-6);
+set('z',top_sep);
+set("optimize for short pulse",0);
+#Beam options
+set("injection axis","z-axis");
+set("direction","backward");
+
+set("wavelength start",wavelengthstart);
+set("wavelength stop",wavelengthstop);
+set("use relative coordinates",0);
+
+############
+##   Ey   ##
+############
+addplane; 
+set("name","Ey");
+set("phase",90);
+set("polarization angle",90);
+#Disposition
+set('x',0e-6);
+set('x span',(getnamed("Substrate","x span"))-200e-9);
+set('y',0.64e-6);
+set('y span',5.8e-6);
+set('z',top_sep);
+#Beam options 
+set("optimize for short pulse",0);
+set("injection axis","z-axis");
+set("direction","backward");
+set("wavelength start",wavelengthstart);
+set("wavelength stop",wavelengthstop);
+set("use relative coordinates",0);
+
+##################
+##   Monitors   ##
+##################
+
+
+#Add L-waveguide power monitor
+addpower;
+set("name","L-out");
+set("monitor type","2D X-normal");
+set("x",-1.6e-6); #optimized
+set("y",0);
+set("y span",0.6e-6);
+set("z",0.125e-6);
+set("z span",0.4e-6);
+set("override global monitor settings",1);
+set("frequency points",numpoints);
+set("partial spectral average",1);
+set("total spectral average",1);
+
+#Add mode expansion monitor
+addmodeexpansion;
+set("name","Expansion");
+setexpansion("input", "L-out");
+set("x",getnamed("L-out","x"));
+set("y",getnamed("L-out","y"));
+set("y span",getnamed("L-out","y span"));
+set("z",getnamed("L-out","z"));
+set("z span",getnamed("L-out","z span"));
+
+set("mode selection","user select"); # use the 'user select' option 
+seteigensolver("use max index",0); # specify a custom value for 'n' 
+seteigensolver("n",getnamed("L","index")); 
+updatemodes(nomode); # select the mode
+
+#Run
+run;
+
+#Copy the profile -- pristine waveguide
+copydcard("::model::L-out","Wgmode");
+
+switchtolayout;
+
+select("L-out");
+delete;
+
+#Get rid of the waveguide but keep its mesh override
+select("L");
+set("index",1);
+
+#Delete the other waveguide
+select("R");
+delete;
+
+#Set up an array of monitors
+for(x=1:no) { 
+    addpower;
+    set("name","DFT"+num2str(x));
+    set("monitor type","2D X-normal");
+    set("x",-x*100e-9);
+    set("y",0);
+    set("y span",0.6e-6);
+    set("z",0.125e-6);
+    set("z span",0.4e-6);
+     }
+     
+run;
+
+#Extract profiles
+    for(x=1:no) { 
+    copydcard("::model::DFT"+num2str(x),"field"+num2str(x));
+    }
+    
+#Calculate overlap
+    for(x=1:no) { 
+        out=overlap("Wgmode","field"+num2str(x));
+        result(1,i)=x;
+        result(2,i)=out(1);
+        result(3,i)=out(2);
+        i=i+1;        
+        }
+        
+#Plot results
+plot(result(1,1:no),-result(3,1:no));
+
+    

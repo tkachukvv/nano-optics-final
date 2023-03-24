@@ -1,0 +1,46 @@
+
+#Script to set up and perform emission sweep
+
+#Set global variables
+numberofpoints=288; #number of sweep points
+phasestart=0; #smallest polarization angle
+phasestop=720; #largest polarization angle
+
+#use to delete pre-existing script
+deletesweep("Emission");
+# add a new sweep and set basic properties
+addsweep;
+setsweep("sweep", "name", "Emission");
+setsweep("Emission", "type", "Ranges");
+setsweep("Emission","Number of points",numberofpoints);
+
+#Emission sweep
+
+##define polarization angle
+# define the phase difference
+para = struct;
+para.Name = "Phase";
+para.Parameter = "::model::Rsource::phase";
+para.Type = "Number";
+
+para.Start = phasestart;
+para.Stop = phasestop;
+
+# add the parameter thickness to the sweep
+addsweepparameter("Emission", para);
+
+#Define result: T
+result_T = struct;
+result_T.Name = "Toverdisc";
+result_T.Result = "::model::Emission::T";
+
+# add the results T to the sweep
+addsweepresult("Emission", result_T);
+
+
+# run the sweep
+runsweep("Emission");
+
+# save and view the results
+resT = getsweepresult("Emission", "Toverdisc");
+visualize(resT);
